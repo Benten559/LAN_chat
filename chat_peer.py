@@ -16,11 +16,7 @@ class ChatPeer:
         
         # Create listener socket
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # Set timeout for the server socket
-        self.server_socket.settimeout(1.0)  # 1 second timeout
-        self.server_socket.bind(('', port))
-        self.server_socket.listen(5)
+        self.setup_server(port)
         
         # Start listener thread
         self.listener_thread = threading.Thread(target=self.accept_connections)
@@ -29,7 +25,19 @@ class ChatPeer:
         
         # Handle graceful shutdown
         signal.signal(signal.SIGINT, self.handle_shutdown)
-    
+
+    def setup_server(self, port:int) -> None:
+        if not self.server_socket:
+            raise ConnectionError("The server socket could not be initialised")
+        try:
+            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # Set timeout for the server socket
+            self.server_socket.settimeout(1.0)  # 1 second timeout
+            self.server_socket.bind(('', port))
+            self.server_socket.listen(5)
+        except Exception as exp:
+            raise Exception(f"Could not establish a server on port: {port}, due to: {exp}") from exp
+
     def get_my_ip(self) -> str:
         """Get the non-localhost IP address of this machine"""
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
